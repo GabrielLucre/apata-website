@@ -544,7 +544,7 @@ const ShareStoryPage = () => {
                               <p className="text-sm text-gray-500 dark:text-gray-400">ou arraste e solte aqui</p>
                             </div>
                             <Badge variant="outline" className="text-xs">
-                              JPG, PNG até 10MB cada
+                              JPG, PNG até 1MB cada
                             </Badge>
                           </div>
                         </label>
