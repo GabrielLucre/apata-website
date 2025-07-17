@@ -7,6 +7,15 @@ import { ExternalLink, Heart, Instagram, MessageCircle, Share } from "lucide-rea
 import Link from "next/link"
 import { useEffect, useState } from "react"
 
+const instagramPosts = [
+  "https://www.instagram.com/p/DMIIQ3YNeve/?img_index=1",
+  "https://www.instagram.com/p/DMBdz0NtPBD/",
+  "https://www.instagram.com/p/DMBE61HNTra/?img_index=1",
+  "https://www.instagram.com/p/DMApI2QNt3Y/",
+  "https://www.instagram.com/p/DL0-l3OuiC8/?img_index=1",
+  "https://www.instagram.com/p/DLvoTG2O2xI/"
+]
+
 declare global {
   interface Window {
     instgrm?: {
@@ -56,37 +65,22 @@ export default function InstagramPosts() {
   const [isLoading, setIsLoading] = useState(true)
   const [embedsProcessed, setEmbedsProcessed] = useState(false)
   const [error, setError] = useState(false)
-  const [posts, setPosts] = useState<string[]>([])
 
   useEffect(() => {
-    const cachedPosts = localStorage.getItem("instagramPosts")
-    if (cachedPosts) {
-      setPosts(JSON.parse(cachedPosts))
-      setIsLoading(false)
-    } else {
-      fetch("/api/instagram?username=apatataquarituba")
-        .then(res => res.json())
-        .then(data => {
-          setPosts(data.links)
-          localStorage.setItem("instagramPosts", JSON.stringify(data.links))
-        })
-        .catch(console.error)
-        .finally(() => setIsLoading(false))
-    }
-  }, [])
-
-  useEffect(() => {
-    if (posts.length === 0) return
+    const alreadyLoaded = localStorage.getItem("instagram_embeds_loaded")
 
     const processInstagramEmbeds = () => {
       try {
-        if (window.instgrm && window.instgrm.Embeds && typeof window.instgrm.Embeds.process === "function") {
+        if (window.instgrm?.Embeds?.process) {
           window.instgrm.Embeds.process()
           setEmbedsProcessed(true)
-          setTimeout(() => setIsLoading(false), 2000)
+          localStorage.setItem("instagram_embeds_loaded", "true")
+          setTimeout(() => {
+            setIsLoading(false)
+          }, 2000)
         }
       } catch (err) {
-        console.error("Erro ao processar embeds do Instagram:", err)
+        console.error("Error processing Instagram embeds:", err)
         setError(true)
         setIsLoading(false)
       }
@@ -96,8 +90,8 @@ export default function InstagramPosts() {
 
     if (!existingScript) {
       const script = document.createElement("script")
-      script.setAttribute("src", "https://www.instagram.com/embed.js")
-      script.setAttribute("async", "")
+      script.src = "https://www.instagram.com/embed.js"
+      script.async = true
       script.onload = processInstagramEmbeds
       script.onerror = () => {
         setError(true)
@@ -105,15 +99,21 @@ export default function InstagramPosts() {
       }
       document.body.appendChild(script)
     } else {
-      processInstagramEmbeds()
+      if (!alreadyLoaded) {
+        processInstagramEmbeds()
+      } else {
+        setIsLoading(false)
+      }
     }
 
     const timeoutId = setTimeout(() => {
-      if (isLoading) setIsLoading(false)
+      if (isLoading) {
+        setIsLoading(false)
+      }
     }, 5000)
 
     return () => clearTimeout(timeoutId)
-  }, [posts])
+  }, [isLoading])
 
   return (
     <section className="py-20 bg-gray-50 dark:bg-secondary/90">
@@ -188,42 +188,44 @@ export default function InstagramPosts() {
         {/* Posts Grid */}
         {!error && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {isLoading
-              ? Array.from({ length: 6 }).map((_, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
+            {instagramPosts.map((url, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+                className="relative"
+              >
+                {/* Show skeleton while loading */}
+                {isLoading && <InstagramPostSkeleton />}
+
+                {/* Instagram embed */}
+                <div
+                  className={`overflow-hidden bg-white dark:bg-gray-800 shadow-lg rounded-xl border-2 border-gray-100 dark:border-gray-700 hover:border-primary dark:hover:border-primary transition-all duration-300 hover:shadow-xl ${isLoading ? "absolute opacity-0" : "opacity-100"
+                    }`}
+                  style={{
+                    transition: "opacity 0.5s ease-in-out",
+                  }}
                 >
-                  <InstagramPostSkeleton />
-                </motion.div>
-              ))
-              : posts.map((url, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
-                  className="relative"
-                >
-                  <div
-                    className="overflow-hidden bg-white dark:bg-gray-800 shadow-lg rounded-xl border-2 border-gray-100 dark:border-gray-700 hover:border-primary dark:hover:border-primary transition-all duration-300 hover:shadow-xl"
-                  >
-                    <blockquote
-                      className="instagram-media w-full"
-                      data-instgrm-permalink={url}
-                      data-instgrm-version="14"
-                      style={{
-                        width: "100%",
-                        maxWidth: "100%",
-                      }}
-                    />
-                  </div>
+                  <blockquote
+                    className="instagram-media w-full"
+                    data-instgrm-permalink={url}
+                    data-instgrm-version="14"
+                    style={{
+                      width: "100%",
+                      maxWidth: "100%",
+                      minHeight: isLoading ? "0" : "auto",
+                    }}
+                  />
+                </div>
+
+                {/* Hover overlay for better UX */}
+                {!isLoading && (
                   <div className="absolute inset-0 bg-black/0 hover:bg-black/10 transition-all duration-300 rounded-xl pointer-events-none" />
-                </motion.div>
-              ))}
+                )}
+              </motion.div>
+            ))}
           </div>
         )}
 
@@ -252,6 +254,16 @@ export default function InstagramPosts() {
                   <Link href="https://www.instagram.com/apatataquarituba/" target="_blank" rel="noopener noreferrer">
                     <Instagram className="mr-2 h-4 w-4" />
                     Seguir no Instagram
+                  </Link>
+                </Button>
+                <Button
+                  variant="outline"
+                  className="border-primary text-primary hover:bg-primary/10 bg-transparent"
+                  asChild
+                >
+                  <Link href="#adoption">
+                    <Heart className="mr-2 h-4 w-4" />
+                    Adotar um Pet
                   </Link>
                 </Button>
               </div>

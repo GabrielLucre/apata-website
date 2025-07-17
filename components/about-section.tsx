@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { motion } from "framer-motion"
-import { Heart, Home, Scissors, Stethoscope, Truck, Users } from "lucide-react"
+import { Heart, Home, Scissors, Stethoscope, Truck } from "lucide-react"
 import Link from "next/link"
 
 const AboutSection = () => {
@@ -70,7 +70,7 @@ const AboutSection = () => {
               lares permanentes e amorosos para eles.
             </p>
             <p className="text-gray-600 dark:text-gray-300 mb-6">
-              Fundada em 2015, a APATA cresceu de um pequeno grupo de voluntários apaixonados para uma reconhecida organização sem fins lucrativos
+              Fundada em 2013, a APATA cresceu de um pequeno grupo de voluntários apaixonados para uma reconhecida organização sem fins lucrativos
               com instalações dedicadas e equipe profissional. Nosso compromisso com o bem-estar animal impulsiona
               tudo o que fazemos.
             </p>
